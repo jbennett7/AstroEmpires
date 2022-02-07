@@ -1,14 +1,6 @@
+input <- new.env()
 
-initialize <- function() {
-    Data <- new.env()
-    Data$Current <- list()
-    Data$Technologies <- list()
-    Data$Structures <- list()
-    Data$Tables <- list()
-    save(Data,file=data.file)
-}
-
-input.table <- function(input=raw.input()) {
+input$table <- function(foobar=raw.input()) {
     source('utils.R')
     source('config')
     if(!file.exists(data.file)){
@@ -35,7 +27,24 @@ input.table <- function(input=raw.input()) {
     save(Data,file=data.file)
 }
 
-input.levels <- function(input=raw.input(), type="Technologies") {
+input$terrain <- function(input=raw.input()) {
+    source('utils.R')
+    source('config')
+    load(data.file)
+    table.name <- gsub(" ",".",input[1])
+    table.columns <- strsplit(
+        gsub("^\t","",gsub(" ",".", input[2])),split="\t")
+    table.data <- do.call(rbind,
+        strsplit(input[3:length(input)], split="\t"))
+    table <- sapply(ad.data.frame(table.data[,2:24],as.numeric))
+    rownames(table) <- table.data[,1]
+    colnames(table) <- table.columns
+    Terrains <- data.frame(table)
+    Data$Tables$Terrains <- Terrains
+    save(Data,file=data.file)
+}
+
+input$levels <- function(input=raw.input(), type="Technologies") {
     source('utils.R')
     source('config')
     if(type != "Technologies" && type != "Structures"){
@@ -61,7 +70,7 @@ input.levels <- function(input=raw.input(), type="Technologies") {
     save(Data,file=data.file)
 }
 
-input.capacities <- function(input=raw.input()) {
+input$capacities <- function(input=raw.input()) {
     source('utils.R')
     source('config')
     load(data.file)
@@ -86,7 +95,7 @@ input.capacities <- function(input=raw.input()) {
     save(Data,file=data.file)
 }
 
-structures <- function(input=raw.input()) {
+input$structures <- function(input=raw.input()) {
     source('utils.R')
     source('config')
     load(data.file)
@@ -105,7 +114,7 @@ structures <- function(input=raw.input()) {
                               "Crystal.Mines","Robotic.Factories",
                               "Shipyards","Orbital.Shipyards",
                               "Spaceports","Command.Centers",
-                              "Ninite.Factories","Android.Factories",
+                              "Nanite.Factories","Android.Factories",
                               "Economic.Centers","Terraform",
                               "MultiLevel.Platforms","Orbital.Base",
                               "Jump.Gate","Biosphere.Mod","Capital")
@@ -114,7 +123,24 @@ structures <- function(input=raw.input()) {
                             "Photon.Turrets","Disruptor.Turrets",
                             "Deflection.Shields","Planetary.Shield",
                             "Planetary.Ring")
+    Structures <- data.frame(Structures)
+    Defenses <- data.frame(Defenses)
     Data$Current[["Structures"]] <- Structures
     Data$Current[["Defenses"]] <- Defenses
+    save(Data,file=data.file)
+}
+
+input$current.technologies <- function(input=raw.input()) {
+    source('utils.R')
+    source('config')
+    load(data.file)
+    rownames <- input[seq(3,length(input),3)]
+    colnames <- strsplit(
+         gsub(" ",".",gsub("^\t","",input[2])),split="\t")[[1]]
+    data <- do.call(rbind,
+         strsplit(gsub("^\t","",input[seq(5,length(data),3)]),split="\t"))
+    rownames(data) <- rownames
+    colnames(data) <- colnames
+    Data$Current$Technologies <- etl.num(as.data.frame(data))
     save(Data,file=data.file)
 }
