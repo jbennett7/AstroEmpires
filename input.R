@@ -1,6 +1,6 @@
 input <- new.env()
 
-input$table <- function(foobar=raw.input()) {
+input$table <- function(input=raw.input()) {
     source('utils.R')
     source('config')
     if(!file.exists(data.file)){
