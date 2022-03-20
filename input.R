@@ -99,14 +99,10 @@ input$structures <- function(input=raw.input()) {
     source('utils.R')
     source('config')
     load(data.file)
-    tmp <- strsplit(input,split="\t")
-    tmp <- cbind(do.call(rbind,strsplit(input,split="\t")),rep("",10))
-    Structures <- sapply(as.data.frame(tmp[,2:24]),as.numeric)
-    Structures[is.na(Structures)] <- 0
+    tmp <- cbind(do.call(rbind,strsplit(paste(input," ",sep=""),split="\t")))
+    tmp <- cbind(tmp[,1:24],tmp[,26:35])
+    Structures <- sapply(as.data.frame(tmp[,2:34]),as.numeric)
     rownames(Structures) <- tmp[,1]
-    Defenses <- sapply(as.data.frame(tmp[,c(26:35)]),as.numeric)
-    Defenses[is.na(Defenses)] <- 0
-    rownames(Defenses) <- tmp[,1]
     colnames(Structures) <- c("Urban.Structures","Solar.Plants",
                               "Gas.Plants","Fusion.Plants",
                               "AntiMatter.Plants","Orbital.Plants",
@@ -117,16 +113,15 @@ input$structures <- function(input=raw.input()) {
                               "Nanite.Factories","Android.Factories",
                               "Economic.Centers","Terraform",
                               "MultiLevel.Platforms","Orbital.Base",
-                              "Jump.Gate","Biosphere.Mod","Capital")
-    colnames(Defenses) <- c("Barracks","Laser.Turrets","Missile.Turrets",
-                            "Plasma.Turrets","Ion.Turrets",
-                            "Photon.Turrets","Disruptor.Turrets",
-                            "Deflection.Shields","Planetary.Shield",
-                            "Planetary.Ring")
+                              "Jump.Gate","Biosphere.Mod","Capital",
+                              "Barracks","Laser.Turrets","Missile.Turrets",
+                              "Plasma.Turrets","Ion.Turrets",
+                              "Photon.Turrets","Disruptor.Turrets",
+                              "Deflection.Shields","Planetary.Shield",
+                              "Planetary.Ring")
     Structures <- data.frame(Structures)
-    Defenses <- data.frame(Defenses)
+    Structures[is.na(Structures)] <- 0
     Data$Current[["Structures"]] <- Structures
-    Data$Current[["Defenses"]] <- Defenses
     save(Data,file=data.file)
 }
 
