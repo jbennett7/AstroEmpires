@@ -105,15 +105,15 @@ input$structures <- function(input=raw.input()) {
     rownames(Structures) <- tmp[,1]
     colnames(Structures) <- c("Urban.Structures","Solar.Plants",
                               "Gas.Plants","Fusion.Plants",
-                              "AntiMatter.Plants","Orbital.Plants",
+                              "Antimatter.Plants","Orbital.Plants",
                               "Research.Labs","Metal.Refineries",
                               "Crystal.Mines","Robotic.Factories",
                               "Shipyards","Orbital.Shipyards",
                               "Spaceports","Command.Centers",
                               "Nanite.Factories","Android.Factories",
                               "Economic.Centers","Terraform",
-                              "MultiLevel.Platforms","Orbital.Base",
-                              "Jump.Gate","Biosphere.Mod","Capital",
+                              "Multi.Level.Platforms","Orbital.Base",
+                              "Jump.Gate","Biosphere.Modification","Capital",
                               "Barracks","Laser.Turrets","Missile.Turrets",
                               "Plasma.Turrets","Ion.Turrets",
                               "Photon.Turrets","Disruptor.Turrets",
@@ -133,7 +133,7 @@ input$current.technologies <- function(input=raw.input()) {
     colnames <- strsplit(
          gsub(" ",".",gsub("^\t","",input[2])),split="\t")[[1]]
     data <- do.call(rbind,
-         strsplit(gsub("^\t","",input[seq(5,length(data),3)]),split="\t"))
+         strsplit(gsub("^\t","",input[seq(5,length(input),3)]),split="\t"))
     rownames(data) <- rownames
     colnames(data) <- colnames
     Data$Current$Technologies <- etl.num(as.data.frame(data))
