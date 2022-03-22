@@ -1,5 +1,6 @@
 # Astro Empires R Program
 
+
 Data Rdata structure is a set of lists
 1. Current
 2. Structures
