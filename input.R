@@ -1,35 +1,51 @@
+source('utils.R')
+source('config')
 input <- new.env()
 
+input$base <- function(base.name,s,f,m,g,c) {
+    load(data.file)
+    rownames <- c(rownames(Data$Current$Bases),base.name)
+    Data$Current$Bases <- rbind(Data$Current$Bases,c(s,f,m,g,c))
+    rownames(Data$Current$Bases) <- rownames
+    save(Data,file=data.file)
+}
+
 input$table <- function(input=raw.input()) {
-    source('utils.R')
-    source('config')
     if(!file.exists(data.file)){
         initialize()
     }
     load(data.file)
     input <- input[input!=""]
     table.name <- gsub(" ", ".", input[1])
-    table.columns <- c(input[1],
-                       "Description",
-                       strsplit(input[2], split="\t")[[1]])
+    table.columns <- strsplit(input[2],split="\t")[[1]]
+    table.columns <- table.columns[table.columns!=""]
+    if(table.name == "Structures")
+        table.columns <- c(table.columns[1],"Construction","Production",table.columns[2:(length(table.columns))])
     table.columns <- gsub(" ", ".", table.columns[table.columns!=""])
-    table.items <- gsub(" ", ".", input[seq(3,length(input),3)])
-    table.description <- input[seq(4,length(input),3)]
-    table.data <- strsplit(gsub("\t$", "\t ", gsub("^\t",
+    table.rows <- gsub(" ", ".", input[seq(3,length(input),3)])
+    table.data <- do.call(rbind,strsplit(gsub("\t$", "\t ", gsub("^\t",
                                 "",
-                                input[seq(5,length(input),3)])), split="\t")
-    table <- as.data.frame(cbind(table.items,
-                                 table.description,
-                                 do.call(rbind,table.data)))
+                                input[seq(5,length(input),3)])), split="\t"))
+    if(table.name == "Structures") {
+        dummy = rep("",length(table.data[,1]))
+        table.data <- cbind(table.data[,1],dummy,dummy,table.data[,(2:length(table.data[1,]))])
+    }
+    table <- as.data.frame(table.data)
     colnames(table) <- table.columns
+    rownames(table) <- table.rows
+    if(table.name == "Structures") {
+        construction <- c("Robotic.Factories","Nanite.Factories","Android.Factories")
+        table[construction, "Construction"] <- c(2,4,6)
+        production <- c("Robotic.Factories","Shipyards","Orbital.Shipyards","Nanite.Factories","Android.Factories")
+        table[production, "Production"] <- c(2,2,8,4,6)
+    }
     table <- etl.num(table)
+    table[is.na(table)] = 0
     Data$Tables[[table.name]] <- table
     save(Data,file=data.file)
 }
 
 input$terrain <- function(input=raw.input()) {
-    source('utils.R')
-    source('config')
     load(data.file)
     table.name <- gsub(" ",".",input[1])
     table.columns <- strsplit(
@@ -45,8 +61,6 @@ input$terrain <- function(input=raw.input()) {
 }
 
 input$levels <- function(input=raw.input(), type="Technologies") {
-    source('utils.R')
-    source('config')
     if(type != "Technologies" && type != "Structures"){
         stop("type only can be Technologies or Structures")
     }
@@ -71,8 +85,6 @@ input$levels <- function(input=raw.input(), type="Technologies") {
 }
 
 input$capacities <- function(input=raw.input()) {
-    source('utils.R')
-    source('config')
     load(data.file)
     columns <- c("Name","Location","Type","Now.Economy","Max.Economy",
                  "Construction","Production","Shipyards",
@@ -96,9 +108,8 @@ input$capacities <- function(input=raw.input()) {
 }
 
 input$structures <- function(input=raw.input()) {
-    source('utils.R')
-    source('config')
     load(data.file)
+    input <- input[input!=""]
     tmp <- cbind(do.call(rbind,strsplit(paste(input," ",sep=""),split="\t")))
     tmp <- cbind(tmp[,1:24],tmp[,26:35])
     Structures <- sapply(as.data.frame(tmp[,2:34]),as.numeric)
@@ -126,10 +137,8 @@ input$structures <- function(input=raw.input()) {
 }
 
 input$current.technologies <- function(input=raw.input()) {
-    source('utils.R')
-    source('config')
     load(data.file)
-    rownames <- input[seq(3,length(input),3)]
+    rownames <- gsub(" ",".",input[seq(3,length(input),3)])
     colnames <- strsplit(
          gsub(" ",".",gsub("^\t","",input[2])),split="\t")[[1]]
     data <- do.call(rbind,
