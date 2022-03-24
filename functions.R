@@ -37,7 +37,7 @@ get.base.construction <- function(base.name) {
     base.starts <- c(get.base.metal(base.name),Data$Tables$Structures[con.bool,"Construction"])
     construction.levels <- as.numeric(Data$Current$Structures[base.name,
         c("Metal.Refineries", rownames(Data$Tables$Structures[con.bool,]))])
-    cybernetics.technology = Data$Current$Technologies["Cybernetics",c("Bonus")]
+    cybernetics.technology <- Data$Current$Technologies["Cybernetics",c("Bonus")]
     return(round(sum(c(20,construction.levels*base.starts))*(1+cybernetics.technology)))
 }
 
