@@ -46,7 +46,7 @@ get.base.production <- function(base.name) {
     base.starts <- c(get.base.metal(base.name),Data$Tables$Structures[prod.bool,"Production"])
     production.levels <- as.numeric(Data$Current$Structures[base.name,
         c("Metal.Refineries", rownames(Data$Tables$Structures[prod.bool,]))])
-    cybernetics.technology = Data$Current$Technologies["Cybernetics",c("Bonus")]
+    cybernetics.technology <- Data$Current$Technologies["Cybernetics",c("Bonus")]
     return(round(sum(production.levels*base.starts)*(1+cybernetics.technology)))
 }
 
