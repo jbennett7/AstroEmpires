@@ -1,12 +1,19 @@
-source('utils.R')
-source('config')
+source("utils.R")
+source("config")
 input <- new.env()
 
-input$base <- function(base.name,s,f,m,g,c) {
+input$bases <- function(input=raw.input()) {
     load(data.file)
-    rownames <- c(rownames(Data$Current$Bases),base.name)
-    Data$Current$Bases <- rbind(Data$Current$Bases,c(s,f,m,g,c))
+    input <- gsub(" *$","",input)
+    input <- do.call(rbind,strsplit(input,split="\t"))
+    rownames <- input[,1]
+    colnames <- c("Position","Type","Terrain")
+    Position <- as.numeric(gsub(".*:(.).$","\\1",input[,2]))
+    Type <- ifelse(gsub(".*:.(.)$","\\1",input[,2])==0,"Planet",ifelse(input[,5]=="Asteroid","Asteroid","Moon"))
+    Terrain <- input[,5]
+    Data$Current$Bases <- data.frame(Position,Type,Terrain)
     rownames(Data$Current$Bases) <- rownames
+    colnames(Data$Current$Bases) <- colnames
     save(Data,file=data.file)
 }
 
@@ -22,7 +29,7 @@ input$table <- function(input=raw.input()) {
     if(table.name == "Structures")
         table.columns <- c(table.columns[1],"Construction","Production",table.columns[2:(length(table.columns))])
     table.columns <- gsub(" ", ".", table.columns[table.columns!=""])
-    table.rows <- gsub(" ", ".", input[seq(3,length(input),3)])
+    table.rows <- gsub(" |-", ".", input[seq(3,length(input),3)])
     table.data <- do.call(rbind,strsplit(gsub("\t$", "\t ", gsub("^\t",
                                 "",
                                 input[seq(5,length(input),3)])), split="\t"))
@@ -48,15 +55,17 @@ input$table <- function(input=raw.input()) {
 input$terrain <- function(input=raw.input()) {
     load(data.file)
     table.name <- gsub(" ",".",input[1])
+    print(table.name)
     table.columns <- strsplit(
-        gsub("^\t","",gsub(" ",".", input[2])),split="\t")
+        gsub("^\t","",gsub(" ",".", input[2])),split="\t")[[1]]
     table.data <- do.call(rbind,
         strsplit(input[3:length(input)], split="\t"))
-    table <- sapply(ad.data.frame(table.data[,2:24],as.numeric))
-    rownames(table) <- table.data[,1]
-    colnames(table) <- table.columns
-    Terrains <- data.frame(table)
-    Data$Tables$Terrains <- Terrains
+    d.table <- table.data[,2:length(table.data[1,])]
+    d.table <- gsub("\\(|\\)|-","",d.table)
+    d.table <- sapply(as.data.frame(d.table),as.numeric)
+    rownames(d.table) <- gsub(" ",".",table.data[,1])
+    colnames(d.table) <- table.columns
+    Data$Tables[[table.name]] <- data.frame(d.table)
     save(Data,file=data.file)
 }
 

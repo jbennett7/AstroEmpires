@@ -6,23 +6,30 @@ get.bases <- function() {
 }
 
 get.base.solar <- function(base.name) {
-    return(as.numeric(Data$Current$Bases[base.name,c("Solar")]))
+    base.pos <- Data$Current$Bases[base.name,"Position"]
+    return(Data$Tables$Astro.Position["Solar.Energy",base.pos])
 }
 
 get.base.fertility <- function(base.name) {
-    return(as.numeric(Data$Current$Bases[base.name,c("Fertility")]))
+    base.info <- Data$Current$Bases[base.name,c("Position","Terrain")]
+    return(Data$Tables$Terrain[base.info[,2],"Fertility"] +
+           Data$Tables$Astro.Position["Fertility",base.info[,1]])
 }
 
 get.base.metal <- function(base.name) {
-    return(as.numeric(Data$Current$Bases[base.name,c("Metal")]))
+    base.terrain <- Data$Current$Bases[base.name,"Terrain"]
+    return(Data$Tables$Terrain[base.terrain,"Metal"])
 }
 
 get.base.gas <- function(base.name) {
-    return(as.numeric(Data$Current$Bases[base.name,c("Gas")]))
+    base.info <- Data$Current$Bases[base.name,c("Position","Terrain")]
+    return(Data$Tables$Terrain[base.info[,2],"Gas"] +
+           Data$Tables$Astro.Position["Gas",base.info[,1]])
 }
 
 get.base.crystals <- function(base.name) {
-    return(as.numeric(Data$Current$Bases[base.name,c("Crystals")]))
+    base.terrain <- Data$Current$Bases[base.name,"Terrain"]
+    return(Data$Tables$Terrain[base.terrain,"Crystals"])
 }
 
 get.base.construction <- function(base.name) {
@@ -58,8 +65,12 @@ get.base.research <- function(base.name) {
     return(round(base.starts*research.levels*(1+ai.technology)))
 }
 
+get.base.structure.current.level <- function(base.name,structure) {
+    return(Data$Current$Structures[base.name,structure])
+}
+
 get.base.structure.next.level <- function(base.name,structure) {
-    return(Data$Current$Structures[base.name,structure]+1)
+    return(get.base.structure.current.level(base.name,structure)+1)
 }
 
 get.base.structure.next.cost <- function(base.name,structure) {
@@ -68,98 +79,29 @@ get.base.structure.next.cost <- function(base.name,structure) {
 }
 
 get.base.structure.current.sum.cost <- function(base.name,structure) {
-    structure.level <- get.base.structure.next.level(base.name,structure)
+    structure.level <- get.base.structure.current.level(base.name,structure)
     if(structure.level==0) return(0)
-    credits <- Data$Structures[[structure]][,"Credits"]
-    return(sum(credits[1:(structure.level)]))
+    return(sum(Data$Structures[[structure]]$Credits[1:structure.level]))
 }
 
-############# Population ###########################
-get.base.max.population <- function(base.name) {
-    pop.bool <- Data$Tables$Structures$Population>0
-    biosphere <- Data$Current$Structures[base.name,"Biosphere.Modification"]
-    base.starts <- c(get.base.fertility(base.name)+biosphere,Data$Tables$Structures[pop.bool,"Population"])
-    population.levels <- as.numeric(Data$Current$Structures[base.name,
-        c("Urban.Structures",rownames(Data$Tables$Structures[pop.bool,]))])
-    return(sum(population.levels*base.starts))
-}
-##
-get.base.population.cost <- function(base.name) {
-    return(sum(c(get.base.structure.current.sum.cost(base.name,"Urban.Structures"),
-                 get.base.structure.current.sum.cost(base.name,"Orbital.Base"),
-                 get.base.structure.current.sum.cost(base.name,"Biosphere.Mod"))))
-}
-
-get.base.cost.per.structure <- function(base.name) {
-    return(round(get.base.population.cost(base.name)/get.base.max.population(base.name)))
-}
-
-build.next.population.cost.per.structure <- function(base.name) {
-    biosphere <- Data$Current$Structures[base.name,"Biosphere.Mod"]
-    base.starts <- c(get.base.fertility(base.name)+biosphere,10,
-            get.base.structure.next.level(base.name,"Urban.Structures")-1)
-    structure.modified.next.level.cost <- c(
-        get.base.structure.next.cost(base.name,"Urban.Structures")+
-            get.base.cost.per.area(base.name),
-        get.base.structure.next.cost(base.name,"Orbital.Base"),
-        get.base.structure.next.cost(base.name,"Biosphere.Modification")+
-            get.base.cost.per.energy(base.name)*24+
-            get.base.cost.per.area(base.name))
-    cpp <- structure.modified.next.level.cost/base.starts
-    return(min(cpp))
-}
-build.next.population.structure <- function(base.name) {
-    population.structures <- c(
-        "Urban.Structures",
-        "Orbital.Base",
-        "Biosphere.Mod")
-    cpp <- build.next.population.cost.per.structure(base.name)
-    return(population.structures[cpp==min(cpp)])
-}
-
-get.base.current.population <- function(base.name) {
-    return(sum(c(as.numeric(Data$Current$Structures[base.name,c(
-        "Solar.Plants",
-        "Gas.Plants",
-        "Fusion.Plants",
-        "Antimatter.Plants",
-        "Orbital.Plants",
-        "Research.Labs",
-        "Metal.Refineries",
-        "Crystal.Mines",
-        "Robotic.Factories",
-        "Shipyards",
-        "Orbital.Shipyards",
-        "Spaceports",
-        "Command.Centers",
-        "Nanite.Factories",
-        "Android.Factories",
-        "Economic.Centers",
-        "Jump.Gate",
-        "Biosphere.Mod",
-        "Barracks",
-        "Laser.Turrets",
-        "Missile.Turrets",
-        "Plasma.Turrets",
-        "Ion.Turrets",
-        "Photon.Turrets",
-        "Disruptor.Turrets",
-        "Deflection.Shields",
-        "Planetary.Shield",
-        "Planetary.Ring")]))))
-}
-############# Population ###########################
-
-############ Area #########################
 get.base.max.area <- function(base.name) {
-    planet.area <- 85
-    area.starts <- c(5, 10)
-    area.modifiers <- as.numeric(Data$Current$Structures[base.name,c(
-        "Terraform","Multi.Level.Platforms")])
-    return(sum(c(planet.area,area.starts*area.modifiers)))
+    area.bool <- Data$Tables$Structures$Area>0
+    area.structures <- c(rownames(Data$Tables$Structures[area.bool,]))
+    base.info <- Data$Current$Bases[base.name,c("Type","Terrain")]
+    area <- Data$Tables$Terrain[base.info[,2],ifelse(base.info[,1]=="Planet","Area.Planet","Area.Moon")]
+    area.levels <- as.numeric(Data$Current$Structures[base.name,area.structures])
+    biosphere <- Data$Current$Structures[base.name,"Biosphere.Modification"]
+    area.capacities <- c(Data$Tables$Structures[area.structures,"Area"])
+    return(sum(c(area,area.capacities*area.levels)))
 }
 
-get.base.area.cost <- function(base.name) {
+get.base.current.area <- function(base.name) {
+    area.bool <- Data$Tables$Structures$Area<0
+    area.structures <- c(rownames(Data$Tables$Structures[area.bool,]))
+    return(sum(Data$Current$Structures[base.name,area.structures]))
+}
+
+get.base.area.structure.cost <- function(base.name) {
     return(sum(c(get.base.structure.current.sum.cost(base.name,"Terraform"),
                  get.base.structure.current.sum.cost(base.name,"Multi.Level.Platforms"))))
 }
@@ -175,11 +117,63 @@ get.base.next.area.cost.per.area <- function(base.name) {
     return(min(cpa))
 }
 
-build.next.area <- function(base.name) {
+get.base.next.area <- function(base.name) {
+    area.structures <- rownames(Data$Tables$Structures[Data$Tables$Structures$Area>0,])
     cpa <- get.base.next.area.cost.per.area(base.name)
-    return(c("Multi.Level.Platforms","Terraform")[cpa==min(cpa)])
+    return(area.structures[cpa==min(cpa)])
 }
-############ Area #########################
+
+get.base.max.population <- function(base.name) {
+    pop.bool <- Data$Tables$Structures$Population>0
+    biosphere <- Data$Current$Structures[base.name,"Biosphere.Modification"]
+    base.starts <- c(
+        get.base.fertility(base.name)+biosphere,
+        Data$Tables$Structures[pop.bool,"Population"])
+    population.levels <- as.numeric(Data$Current$Structures[base.name,
+        c("Urban.Structures",rownames(Data$Tables$Structures[pop.bool,]))])
+    return(sum(population.levels*base.starts))
+}
+
+get.base.population.structures.cost <- function(base.name) {
+    return(sum(c(get.base.structure.current.sum.cost(base.name,"Urban.Structures"),
+                 get.base.structure.current.sum.cost(base.name,"Orbital.Base"),
+                 get.base.structure.current.sum.cost(base.name,"Biosphere.Modification"))))
+}
+
+get.base.cost.per.population <- function(base.name) {
+    return(round(get.base.population.structures.cost(base.name)/get.base.current.population(base.name)))
+}
+
+get.base.next.cost.per.population.structure <- function(base.name) {
+    biosphere <- Data$Current$Structures[base.name,"Biosphere.Modification"]
+    base.starts <- c(get.base.fertility(base.name)+biosphere,10,
+            get.base.structure.next.level(base.name,"Urban.Structures")-1)
+    structure.modified.next.level.cost <- c(
+        get.base.structure.next.cost(base.name,"Urban.Structures")+
+            get.base.cost.per.area(base.name),
+        get.base.structure.next.cost(base.name,"Orbital.Base"),
+        get.base.structure.next.cost(base.name,"Biosphere.Modification")+
+            get.base.cost.per.energy(base.name)*24+
+            get.base.cost.per.area(base.name))
+    cpp <- structure.modified.next.level.cost/base.starts
+    return(min(cpp))
+}
+
+build.next.population.structure <- function(base.name) {
+    population.structures <- c(
+        "Urban.Structures",
+        "Orbital.Base",
+        "Biosphere.Mod")
+    cpp <- build.next.population.cost.per.structure(base.name)
+    return(population.structures[cpp==min(cpp)])
+}
+
+get.base.current.population <- function(base.name) {
+    pop.bool <- Data$Tables$Structures$Population<0
+    return(sum(c(as.numeric(Data$Current$Structures[base.name,c(
+        rownames(Data$Tables$Structures[pop.bool,]),
+        rownames(Data$Tables$Defenses[,]))]))))
+}
 
 ############ Energy ############################
 get.base.max.energy <- function(base.name) {
