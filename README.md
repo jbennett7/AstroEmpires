@@ -13,3 +13,9 @@ functions.R - experimental not sure yet what it will do.
 config - configuration file. Right now just holds the path to the Data structure
 Rdata file.  
 utils.R - utility functions for aiding the other stuff.  
+
+The `Data` data structure:
+* __Current__ - General current information from the accout.
+* __Structures__ - Level tables for the structures.
+* __Tables__ - General infromation from the game.
+* __Technologies__ - Level tables for technologies.
