@@ -1,6 +1,10 @@
 source("config")
 load(data.file)
 
+home.base <- function(base.name) {
+    ifelse(Data$Home==base.name,return(TRUE),return(FALSE))
+}
+
 get.bases <- function() {
     return(rownames(Data$Current$Bases))
 }
@@ -272,7 +276,7 @@ get.base.energy.structure.total.cost <- function(base.name) {
 }
 
 get.base.cost.per.energy <- function(base.name) {
-    return(round(get.base.energy.structure.cost(base.name)/get.base.max.energy(base.name)))
+    return(round(get.base.energy.structure.total.cost(base.name)/get.base.max.energy(base.name)))
 }
 
 get.base.next.cost.per.energy.structure <- function(base.name) {
@@ -303,12 +307,6 @@ get.base.next.energy.structure <- function(base.name) {
     cpe <- get.base.next.cost.per.energy.structure(base.name)
     return(energy.structures[cpe==min(cpe)])
 }
-
-get.base.next.energy.structure <- function(base.name) {
-    energy.structures <- get.energy.structures()
-    cpe <- get.base.next.cost.per.energy.structure(base.name)
-    return(energy.structures[cpe==min(cpe)])
-}
 ########################## Energy ###############################
 
 ########################## Construction #########################
@@ -317,10 +315,59 @@ get.construction.structures <- function() {
 }
 
 get.base.current.construction <- function(base.name) {
-    base.starts <- c(get.base.metal(),
-        Data$Tables$Structures[Data$Tables$Structures$Constructuion>0,"Construction"])
+    initial.construction <- ifelse(home.base(base.name),40,20)
+    base.starts <- c(get.base.metal(base.name),
+        Data$Tables$Structures[Data$Tables$Structures$Construction>0,"Construction"])
     construction.levels <- as.numeric(Data$Current$Structures[base.name,get.construction.structures()])
     cybernetics <- Data$Current$Technologies["Cybernetics","Bonus"]+1
-    return(base.starts)
-    return(sum(round(c(20,construction.levels*base.starts*cybernetics))))
+    return(round(sum(c(initial.construction,construction.levels*base.starts))*cybernetics))
+}
+
+get.base.construction.structure.cost.each <- function(base.name) {
+    construction.structures <- get.construction.structures()
+    base.construction.structures <- Data$Current$Structures[base.name,construction.structures]
+    sum.cost <- c()
+    for(structure in construction.structures) {
+        if(base.construction.structures[,structure]==0)
+            sum.structure <- 0
+        else
+            sum.structure <- sum(Data$Structures[[structure]]$Credits[
+                1:base.construction.structures[,structure]])
+        sum.cost <- c(sum.cost,sum.structure)
+    }
+    return(sum.cost)
+}
+
+get.base.construction.structure.total.cost <- function(base.name) {
+    return(sum(get.base.construction.structure.cost.each(base.name)))
+}
+
+get.base.cost.per.construction <- function(base.name) {
+    return(round(get.base.construction.structure.total.cost(base.name)/get.base.construction(base.name)))
+}
+
+get.base.next.cost.per.construction.structure <- function(base.name) {
+    base.starts <- c(get.base.metal(base.name),
+        Data$Tables$Structures[Data$Tables$Structures$Construction>0,"Construction"])
+    structure.modified.next.level.cost <- c(
+        get.base.structure.next.cost(base.name,"Metal.Refineries")+
+            get.base.cost.per.area(base.name)+
+            get.base.cost.per.population(base.name),
+        get.base.structure.next.cost(base.name,"Robotic.Factories")+
+            get.base.cost.per.area(base.name)+
+            get.base.cost.per.population(base.name),
+        get.base.structure.next.cost(base.name,"Nanite.Factories")+
+            get.base.cost.per.area(base.name)+
+            get.base.cost.per.population(base.name),
+        get.base.structure.next.cost(base.name,"Android.Factories")+
+            get.base.cost.per.area(base.name)+
+            get.base.cost.per.population(base.name))
+    cpc <- round(structure.modified.next.level.cost/base.starts)
+    return(cpc)
+}
+
+get.base.next.construction.structure <- function(base.name) {
+    construction.structures <- get.construction.structures()
+    cpc <- get.base.next.cost.per.construction.structure(base.name)
+    return(construction.structures[cpc==min(cpc)])
 }

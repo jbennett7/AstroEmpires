@@ -2,6 +2,12 @@ source("utils.R")
 source("config")
 input <- new.env()
 
+input$mark.base.home <- function(base.name) {
+    load(data.file)
+    Data$Home <- base.name
+    save(Data,file=data.file)
+}
+
 input$bases <- function(input=raw.input()) {
     load(data.file)
     input <- gsub(" *$","",input)
