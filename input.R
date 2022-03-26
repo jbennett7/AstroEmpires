@@ -2,12 +2,15 @@ source("utils.R")
 source("config")
 input <- new.env()
 
+# NOTE: The home base needs to be marked
+# Advantages for home base is +20 Construction (i.e. starts with +40 Construction, instead of initial +20)
 input$mark.base.home <- function(base.name) {
     load(data.file)
     Data$Home <- base.name
     save(Data,file=data.file)
 }
 
+#NOTE: The comment section in "Bases" needs to have the base type (i.e. "Rocky", "Arid", ...).
 input$bases <- function(input=raw.input()) {
     load(data.file)
     input <- gsub(" *$","",input)
@@ -23,6 +26,8 @@ input$bases <- function(input=raw.input()) {
     save(Data,file=data.file)
 }
 
+#TODO: Generic function to collect the tables in the Tables section. Does not work with Terrain.
+#      How do we clean this up?
 input$table <- function(input=raw.input()) {
     if(!file.exists(data.file)){
         initialize()
@@ -46,6 +51,7 @@ input$table <- function(input=raw.input()) {
     table <- as.data.frame(table.data)
     colnames(table) <- table.columns
     rownames(table) <- table.rows
+    # This is necessary because the table does not provide this information
     if(table.name == "Structures") {
         construction <- c("Robotic.Factories","Nanite.Factories","Android.Factories")
         table[construction, "Construction"] <- c(2,4,6)
@@ -58,6 +64,7 @@ input$table <- function(input=raw.input()) {
     save(Data,file=data.file)
 }
 
+#TODO: How is the Astro.Position table created?
 input$terrain <- function(input=raw.input()) {
     load(data.file)
     table.name <- gsub(" ",".",input[1])
@@ -75,6 +82,7 @@ input$terrain <- function(input=raw.input()) {
     save(Data,file=data.file)
 }
 
+#TODO: Break this up into two input functions one for Technology one for Structures.
 input$levels <- function(input=raw.input(), type="Technologies") {
     if(type != "Technologies" && type != "Structures"){
         stop("type only can be Technologies or Structures")
@@ -99,6 +107,7 @@ input$levels <- function(input=raw.input(), type="Technologies") {
     save(Data,file=data.file)
 }
 
+#TODO: Is this needed?
 input$capacities <- function(input=raw.input()) {
     load(data.file)
     columns <- c("Name","Location","Type","Now.Economy","Max.Economy",
@@ -129,22 +138,9 @@ input$structures <- function(input=raw.input()) {
     tmp <- cbind(tmp[,1:24],tmp[,26:35])
     Structures <- sapply(as.data.frame(tmp[,2:34]),as.numeric)
     rownames(Structures) <- tmp[,1]
-    colnames(Structures) <- c("Urban.Structures","Solar.Plants",
-                              "Gas.Plants","Fusion.Plants",
-                              "Antimatter.Plants","Orbital.Plants",
-                              "Research.Labs","Metal.Refineries",
-                              "Crystal.Mines","Robotic.Factories",
-                              "Shipyards","Orbital.Shipyards",
-                              "Spaceports","Command.Centers",
-                              "Nanite.Factories","Android.Factories",
-                              "Economic.Centers","Terraform",
-                              "Multi.Level.Platforms","Orbital.Base",
-                              "Jump.Gate","Biosphere.Modification","Capital",
-                              "Barracks","Laser.Turrets","Missile.Turrets",
-                              "Plasma.Turrets","Ion.Turrets",
-                              "Photon.Turrets","Disruptor.Turrets",
-                              "Deflection.Shields","Planetary.Shield",
-                              "Planetary.Ring")
+    colnames(Structures) <- c(
+        rownames(Data$Tables$Structures),
+        rownames(Data$Tables$Defenses))
     Structures <- data.frame(Structures)
     Structures[is.na(Structures)] <- 0
     Data$Current[["Structures"]] <- Structures

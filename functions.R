@@ -100,6 +100,10 @@ get.energy.structures <- function() {
     return(c("Solar.Plants", "Gas.Plants", rownames(Data$Tables$Structures[Data$Tables$Structures$Energy>0,])))
 }
 
+get.structure.resource.dependencies <- function(structs) {
+    return(Data$Tables$Structures[structs,
+        colSums(Data$Tables$Structures[structs,unlist(lapply(Data$Tables$Structures,is.numeric))]<0)>0])
+}
 
 ########################### Area ################################
 get.area.structures <- function() {
