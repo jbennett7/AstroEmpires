@@ -102,8 +102,10 @@ get.energy.structures <- function() {
 
 get.structure.resource.dependencies <- function(structs) {
     return(Data$Tables$Structures[structs,
-        colSums(Data$Tables$Structures[structs,unlist(lapply(Data$Tables$Structures,is.numeric))]<0)>0])
+        colSums(Data$Tables$Structures[structs,unlist(lapply(Data$Tables$Structures,is.numeric))]<0)>0,drop=F])
 }
+
+get.structure.resource.dependency.cost <- function() {}
 
 ########################### Area ################################
 get.area.structures <- function() {
