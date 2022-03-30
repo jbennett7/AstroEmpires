@@ -19,3 +19,7 @@ The `Data` data structure:
 * __Structures__ - Level tables for the structures.
 * __Tables__ - General infromation from the game.
 * __Technologies__ - Level tables for technologies.
+
+Energy Technology benefit calculation:
+`round(sum(c(initial.energy=2,solar.plants,gas.plants,fusion.plants,
+             antimatter.plants,orbital.plants)*energy.technology.bonus))`
