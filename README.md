@@ -21,5 +21,7 @@ The `Data` data structure:
 * __Technologies__ - Level tables for technologies.
 
 Energy Technology benefit calculation:
-`round(sum(c(initial.energy=2,solar.plants,gas.plants,fusion.plants,
-             antimatter.plants,orbital.plants)*energy.technology.bonus))`
+```
+round(sum(c(initial.energy=2,solar.plants,gas.plants,fusion.plants,
+             antimatter.plants,orbital.plants)*energy.technology.bonus))
+```
