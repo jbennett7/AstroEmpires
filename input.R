@@ -1,17 +1,17 @@
 source("utils.R")
 source("config")
-input <- new.env()
+Input <- new.env()
 
 # NOTE: The home base needs to be marked
 # Advantages for home base is +20 Construction (i.e. starts with +40 Construction, instead of initial +20)
-input$mark.base.home <- function(base.name) {
+Input$mark.base.home <- function(base.name) {
     load(data.file)
     Data$Home <- base.name
     save(Data,file=data.file)
 }
 
 #NOTE: The comment section in "Bases" needs to have the base type (i.e. "Rocky", "Arid", ...).
-input$bases <- function(input=raw.input()) {
+Input$bases <- function(input=Utils$raw.input()) {
     load(data.file)
     input <- gsub(" *$","",input)
     input <- do.call(rbind,strsplit(input,split="\t"))
@@ -28,9 +28,9 @@ input$bases <- function(input=raw.input()) {
 
 #TODO: Generic function to collect the tables in the Tables section. Does not work with Terrain.
 #      How do we clean this up?
-input$table <- function(input=raw.input()) {
+Input$table <- function(input=Utils$raw.input()) {
     if(!file.exists(data.file)){
-        initialize()
+        Utils$initialze()
     }
     load(data.file)
     input <- input[input!=""]
@@ -58,14 +58,14 @@ input$table <- function(input=raw.input()) {
         production <- c("Robotic.Factories","Shipyards","Orbital.Shipyards","Nanite.Factories","Android.Factories")
         table[production, "Production"] <- c(2,2,8,4,6)
     }
-    table <- etl.num(table)
+    table <- Utils$etl.num(table)
     table[is.na(table)] = 0
     Data$Tables[[table.name]] <- table
     save(Data,file=data.file)
 }
 
 #TODO: How is the Astro.Position table created?
-input$terrain <- function(input=raw.input()) {
+Input$terrain <- function(input=Utils$raw.input()) {
     load(data.file)
     table.name <- gsub(" ",".",input[1])
     print(table.name)
@@ -83,13 +83,7 @@ input$terrain <- function(input=raw.input()) {
 }
 
 #TODO: Break this up into two input functions one for Technology one for Structures.
-input$levels <- function(input=raw.input(), type="Technologies") {
-    if(type != "Technologies" && type != "Structures"){
-        stop("type only can be Technologies or Structures")
-    }
-    if(!file.exists(data.file)){
-        initialize()
-    }
+Input$levels <- function(input=Utils$raw.input(), type="Technologies") {
     load(data.file)
     table.name <- gsub(" ", ".", input[1])
     level.data <- input[grepl("\t", input)]
@@ -98,7 +92,7 @@ input$levels <- function(input=raw.input(), type="Technologies") {
             rbind,
             strsplit(level.data[2:length(level.data)], split="\t"))))
     colnames(df) <- strsplit(gsub(" ", ".", level.data[1]), split="\t")[[1]]
-    df <- etl.num(df)
+    df <- Utils$etl.num(df)
     if(type=="Technologies"){
         Data$Technologies[[table.name]] <- df
     } else {
@@ -106,9 +100,15 @@ input$levels <- function(input=raw.input(), type="Technologies") {
     }
     save(Data,file=data.file)
 }
+Input$levels.structures <- function(input=Utils$raw.input()) {
+    Input$levels(input,type="Structures")
+}
+Input$levels.technologies <- function(input=Utils$raw.input()) {
+    Input$levels(input,type="Technologies")
+}
 
 #TODO: Is this needed?
-input$capacities <- function(input=raw.input()) {
+Input$capacities <- function(input=Utils$raw.input()) {
     load(data.file)
     columns <- c("Name","Location","Type","Now.Economy","Max.Economy",
                  "Construction","Production","Shipyards",
@@ -126,12 +126,12 @@ input$capacities <- function(input=raw.input()) {
     tmp <- data.frame(tmp[,1:3], eco.regs[,2:3], tmp[,5], prod.regs[,2:4],
                       res.regs[,2:3], tmp[,8])
     colnames(tmp) <- columns
-    tmp <- process$util$etl.num(tmp)
+    tmp <- process$util$Utils$etl.num(tmp)
     Data$Current[[Capacities]] <- tmp
     save(Data,file=data.file)
 }
 
-input$structures <- function(input=raw.input()) {
+Input$structures <- function(input=Utils$raw.input()) {
     load(data.file)
     input <- input[input!=""]
     tmp <- cbind(do.call(rbind,strsplit(paste(input," ",sep=""),split="\t")))
@@ -147,7 +147,7 @@ input$structures <- function(input=raw.input()) {
     save(Data,file=data.file)
 }
 
-input$current.technologies <- function(input=raw.input()) {
+Input$current.technologies <- function(input=Utils$raw.input()) {
     load(data.file)
     rownames <- gsub(" ",".",input[seq(3,length(input),3)])
     colnames <- strsplit(
@@ -156,6 +156,6 @@ input$current.technologies <- function(input=raw.input()) {
          strsplit(gsub("^\t","",input[seq(5,length(input),3)]),split="\t"))
     rownames(data) <- rownames
     colnames(data) <- colnames
-    Data$Current$Technologies <- etl.num(as.data.frame(data))
+    Data$Current$Technologies <- Utils$etl.num(as.data.frame(data))
     save(Data,file=data.file)
 }

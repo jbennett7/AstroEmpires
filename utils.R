@@ -1,4 +1,5 @@
-initialize <- function() {
+Utils <- new.env()
+Utils$initialize <- function() {
     Data <- new.env()
     Data$Current <- list()
     Data$Technologies <- list()
@@ -7,7 +8,7 @@ initialize <- function() {
     save(Data,file=data.file)
 }
 
-etl.num <- function(df) {
+Utils$etl.num <- function(df) {
     for(col in colnames(df)){
         if(grepl("%", df[1,col])){
             tryCatch({
@@ -24,6 +25,6 @@ etl.num <- function(df) {
     return(df)
 }
 
-raw.input <- function() {
+Utils$raw.input <- function() {
     return(readLines(con=stdin()))
 }
