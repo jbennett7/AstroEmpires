@@ -1,5 +1,20 @@
 load(".datafile.Rdata")
 
+Trade <- new.env()
+Trade$income <- function(low.base,distance,players) {
+    return(ceiling(
+        sqrt(low.base)*(1+(sqrt(distance)/75)+(sqrt(players)/10))))
+}
+
+Fleet <- new.env()
+Fleet$support <- function(eco) {
+    return(eco^1.6+(eco/100)^3.2)
+}
+
+Fleet$mainenance <- function(fleet.above) {
+    return((fleet.above/125)^.7)
+}
+
 Base <- new.env()
 Base$resources <- function(bases) {
     return(Data$Tables$Terrain[Data$Current$Bases[bases,"Terrain"],])
