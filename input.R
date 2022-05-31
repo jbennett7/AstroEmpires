@@ -85,7 +85,7 @@ Input$terrain <- function(input=Utils$raw.input()) {
 #TODO: Break this up into two input functions one for Technology one for Structures.
 Input$levels <- function(input=Utils$raw.input(), type="Technologies") {
     load(data.file)
-    table.name <- gsub(" ", ".", input[1])
+    table.name <- gsub(" |-", ".", input[1])
     level.data <- input[grepl("\t", input)]
     df <- as.data.frame(
         cbind(do.call(
@@ -151,7 +151,7 @@ Input$current.technologies <- function(input=Utils$raw.input()) {
     load(data.file)
     rownames <- gsub(" ",".",input[seq(3,length(input),3)])
     colnames <- strsplit(
-         gsub(" ",".",gsub("^\t","",input[2])),split="\t")[[1]]
+         gsub(" |-",".",gsub("^\t","",input[2])),split="\t")[[1]]
     data <- do.call(rbind,
          strsplit(gsub("^\t","",input[seq(5,length(input),3)]),split="\t"))
     rownames(data) <- rownames

@@ -17,7 +17,7 @@ Fleet$mainenance <- function(fleet.above) {
 
 Base <- new.env()
 Base$resources <- function(bases) {
-    return(Data$Tables$Terrain[Data$Current$Bases[bases,"Terrain"],])
+    return(Data$Tables$Terrains[Data$Current$Bases[bases,"Terrain"],])
 }
 
 Base$solar <- function(bases) {
@@ -171,81 +171,48 @@ Structures$next.costs <- function(bases,structures) {
 
 #
 Planning <- new.env()
-#Planning$base.construction(bases) {}
-#Planning$structure.build.time(bases,structures) {
-
-#    gas.values <- base.gas(bases)
-#    energy.values <- Data$Tables$Structures[Data$Tables$Structures$Energy>0,"Energy"]
-#    df <- cbind(solar.values,gas.values,matrix(rep(energy.values,length(bases)),nrow=length(bases),byrow=TRUE))
-#    colnames(df) <- energy.structures()
-#    rownames(df) <- bases
-#    return(df)
-#}
-#
-#population.structure.values <- function(bases) {
-#    biosphere.level <- Data$Current$Structures[bases,"Biosphere.Modification"]
-#    urban.structure.level <- Data$Current$Structures[bases,"Urban.Structures"]
-#    bases.fertility <- base.fertility(bases)+biosphere.level
-#    population.values <- Data$Tables$Structures[Data$Tables$Structures$Population>0,"Population"]
-#    df <- cbind(bases.fertility,matrix(rep(population.values,length(bases)),nrow=length(bases),byrow=TRUE),
-#        urban.structure.level)
-#    colnames(df) <- population.structures()
-#    rownames(df) <- bases
-#    return(df)
-#}
-#
-#construction.structure.values <- function(bases) {
-#    metal.values <- base.metal(bases)
-#    construction.values <- Data$Tables$Structures[Data$Tables$Structures$Construction>0,"Construction"]
-#    df <- cbind(metal.values,matrix(rep(construction.values,length(bases)),nrow=length(bases),byrow=TRUE))
-#    colnames(df) <- construction.structures()
-#    rownames(df) <- bases
-#    return(df)
-#}
-#
-#production.structure.values <- function(bases) {
-#    metal.values <- base.metal(bases)
-#    production.values <- Data$Tables$Structures[Data$Tables$Structures$Production>0,"Production"]
-#    df <- cbind(metal.values,matrix(rep(production.values,length(bases)),nrow=length(bases),byrow=TRUE))
-#    colnames(df) <- production.structures()
-#    rownames(df) <- bases
-#    return(df)
-#}
-#
-#economy.structure.values <- function(bases) {
-#    crystal.values <- base.crystals(bases)
-#    economy.values <- Data$Tables$Structures[Data$Tables$Structures$Economy>0,"Economy"]
-#    df <- cbind(crystal.values,matrix(rep(economy.values,length(bases)),nrow=length(bases),byrow=TRUE))
-#    colnames(df) <- economy.structures()
-#    rownames(df) <- bases
-#    return(df)
-#}
-#
-#base.area <- function(bases) {
-#    return(rowSums(area.structure.values(bases)*Data$Current$Structures[bases,area.structures()]))
-#}
-#base.energy <- function(bases) {
-#    return(rowSums(energy.structure.values(bases)*Data$Current$Structures[bases,energy.structures()]))
-#}
-#base.population <- function(bases) {
-#    return(rowSums(population.structure.values(bases)*Data$Current$Structures[bases,population.structures()]))
-#}
-#base.construction <- function(bases) {
-#    return(rowSums(construction.structure.values(bases)*Data$Current$Structures[bases,construction.structures()]))
-#}
-#base.production <- function(bases) {
-#    return(rowSums(production.structure.values(bases)*Data$Current$Structures[bases,production.structures()]))
-#}
-#base.economy <- function(bases) {
-#    return(rowSums(economy.structure.values(bases)*Data$Current$Structures[bases,economy.structures()]))
-#}
-#
-#base.structures.level.costs <- function(bases,structures) {
-#}
-#
-#base.structure.dependencies <- function(structures) {
-#    return(-Data$Tables$Structures[structures,
-#           colSums(Data$Tables$Structures[structures,
-#                   unlist(lapply(Data$Tables$Structures,is.numeric))]<0)>0,drop=F])
-#}
-
+Planning$process.order <- function(df,type="Structures") {
+    ret <- 0
+    tables <- list()
+    if(type=="Structures") {
+        tables <- Data$Structures
+    } else {
+        tables <- Data$Technologies
+    }
+    for(item in rownames(df)) {
+        from <- df[item,"from"]
+        to <- df[item,"to"]
+        ret <- ret + tables[[item]]$Credits[from:to]
+    }
+    return(sum(ret))
+}
+Planning$process.construction <- function(df) {
+    Planning$process.order(df,"Structures")
+}
+Planning$process.research <- function(df) {
+    df$to<-df$to+1;df$from<-df$from+1
+    Planning$process.order(df,"Technologies")
+}
+Planning$structure.cost <- function(name,lvl) {
+    return(Data$Structrues[[name]]$Credits[lvl])
+}
+Planning$technologies.cost <- function(name,lvl) {
+    return(Data$Technologies[[name]]$Credits[lvl+1])
+}
+Planning$commanders.cost <- function(lvl) {
+    return(sum(Data$Tables$Commanders$Credits[1:lvl]))
+}
+Planning$next.technology <- function(name) {
+    curr <- Data$Current$Technologies[,c("Research.Cost","Actual.Level")]
+    min.cur <- min(curr[,"Research.Cost"])
+    return(row.names(curr[curr[,"Research.Cost"]==min.cur,]))
+}
+Planning$next.structure <- function(base,name) {
+    structs <- subset(Data$Tables$Structures[Data$Tables$Structures$Economy>0,],
+                      select=-c(Credits,Advanced,Requires))
+    curr <- subset(Data$Current$Structures[base,],
+                   select=-c(Urban.Structures:Research.Labs,
+                             Terraform:Biosphere.Modification,
+                             Barracks:Planetary.Ring))
+    return(curr)
+}
