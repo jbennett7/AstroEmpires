@@ -12,8 +12,9 @@ setClass(
     representation = representation(
         name = "character",
         home = "logical",
-        structures = "matrix",
-        sfmgca = "matrix",
+        structures = "data.frame",
+        defenses = "data.frame",
+        resources = "matrix",
         population = "numeric",
         energy = "numeric",
         area = "numeric",
@@ -23,7 +24,7 @@ setClass(
         research = "numeric"
     ),
     prototype = prototype(
-        sfmgca = matrix(0),
+        resources = matrix(0),
         population = c(0,0),
         energy = c(0,0),
         area = c(0,0),
@@ -39,21 +40,15 @@ setMethod(
     definition = function(.Object, name){
         .Object@name = name
 
-        .Object@home = if(Data$Current$Home==name) TRUE else FALSE
-
-        .Object@structures = {
-            tmp <- as.matrix(as.numeric(Data$Current$Structures[name,]), ncol = 1)
-            row.names(tmp) <- names(Data$Current$Structures)
-            tmp
-        }
-
-        .Object@sfmgca = {
+        .Object@resources = {
             base.info <- Data$Current$Bases[name,]
             terrain <- Data$Tables$Terrains[base.info$Terrain,]
             area <- if(base.info$Type == "Planet") terrain$Area.Planet else terrain$Area.Moon
             tmp <- as.matrix( c(
                 astro.pos["Solar.Energy", base.info$Position],
-                astro.pos["Fertility", base.info$Position]+terrain$Fertility,
+                astro.pos["Fertility", base.info$Position]+
+                    terrain$Fertility+
+                    as.numeric(Data$Current$Structures[.Object@name,"Biosphere.Modification"]),
                 terrain$Metal,
                 astro.pos["Gas", base.info$Position]+terrain$Gas,
                 terrain$Crystals,
@@ -62,59 +57,107 @@ setMethod(
             tmp
         }
 
+        .Object@structures = {
+            tmp <- Data$Tables$Structures[
+                !row.names(Data$Tables$Structures) %in% c("Crystal.Mines"),]
+            tmp["Metal.Refineries", c("Production", "Construction")] <- .Object@resources["Metal",]
+            tmp["Solar.Plants","Energy"] <- .Object@resources["Solar.Energy",]
+            tmp["Gas.Plants","Energy"] <- .Object@resources["Gas",]
+            tmp["Urban.Structures","Population"] <- .Object@resources["Fertility",]
+            tmp <- tmp[, !names(tmp) %in% c("Credits", "Requires", "Advanced")]
+            Level <- Data$Current$Structures[.Object@name,row.names(tmp)]
+            Credits <- c()
+            for(table.name in row.names(tmp)){
+                Credits <- c(Credits,
+                    Data$Structures[[table.name]][as.numeric(Level[table.name])+1,"Credits"])
+            }
+            Level <- as.numeric(Level)
+            tmp <- cbind(Level, Credits, tmp)
+        }
+
+        .Object@defenses = {
+            tmp <- Data$Tables$Defenses
+            tmp <- tmp[,!names(tmp) %in% c("Credits", "Requires", "Weapon")]
+            Level <- Data$Current$Structures[.Object@name,row.names(tmp)]
+            Credits <- c()
+            for(table.name in row.names(tmp)){
+                Credits <- c(Credits,
+                    Data$Structures[[table.name]][as.numeric(Level[table.name])+1,"Credits"])
+            }
+            Level <- as.numeric(Level)
+            Population <- rep(-1, length(row.names(tmp)))
+            tmp <- cbind(Level, Credits, tmp, Population)
+            tmp
+        }
+
         .Object@population = {
-            c( sum(.Object@structures[c(row.names(struct.refs[struct.refs$Population<0,]),
-                   row.names(defense.refs)),]),
-               sum(.Object@structures[c("Urban.Structures", "Orbital.Base"),]*
-                   c(.Object@sfmgca["Fertility",], 10)))
+            c( sum(c(.Object@structures[.Object@structures$Population<0,"Level"],
+                     .Object@defenses[.Object@defenses$Population<0,"Level"])*
+                   -c(.Object@structures[.Object@structures$Population<0,"Population"],
+                      .Object@defenses[.Object@defenses$Population<0,"Population"])),
+               sum(.Object@structures[.Object@structures$Population>0,"Level"]*
+                   .Object@structures[.Object@structures$Population>0,"Population"]))
         }
 
         .Object@energy = {
-            c( sum(.Object@structures[c(row.names(struct.refs[struct.refs$Energy<0,]),
-                   row.names(defense.refs[defense.refs$Energy<0,])),]*
-                   -c(struct.refs[struct.refs$Energy<0,"Energy"],
-                       defense.refs[defense.refs$Energy<0, "Energy"])),
+            #print(.Object@structures[.Object@structures$Energy>0,"Energy"])
+            energy.tech <- 1+Data$Current$Technologies["Energy","Bonus"]
+            c( sum(c(.Object@structures[.Object@structures$Energy<0,"Level"],
+                     .Object@defenses[.Object@defenses$Energy<0,"Level"])*
+                  -c(.Object@structures[.Object@structures$Energy<0, "Energy"],
+                     .Object@defenses[.Object@defenses$Energy<0, "Energy"])),
                round(sum(2,
-                   .Object@structures[c("Solar.Plants", "Gas.Plants",
-                       row.names(struct.refs[struct.refs$Energy>0,])),]*
-                   c(.Object@sfmgca[c("Solar.Energy", "Gas"),],
-                       struct.refs[struct.refs$Energy>0, "Energy"]))*
+                   .Object@structures[row.names(.Object@structures[.Object@structures$Energy>0,]),"Level"]*
+                   c(.Object@structures[.Object@structures$Energy>0, "Energy"]))*
                    energy.tech))
-        }
- 
+       }
+
         .Object@area = {
             c(
-               sum(.Object@structures[c(row.names(struct.refs[struct.refs$Area<0,]),
-                   row.names(defense.refs[defense.refs$Area<0,])),]*
-                   -c(struct.refs[struct.refs$Area<0,"Area"],
-                       defense.refs[defense.refs$Area<0,"Area"])),
-               sum(.Object@sfmgca["Area",],
-                   .Object@structures[row.names(struct.refs[struct.refs$Area>0,]),]*
-                   struct.refs[struct.refs$Area>0,"Area"]))
+               sum(c(.Object@structures[.Object@structures$Area<0, "Level"],
+                     .Object@defenses[.Object@defenses$Area<0, "Level"])*
+                  -c(.Object@structures[.Object@structures$Area<0, "Area"],
+                     .Object@defenses[.Object@defenses$Area<0, "Area"])),
+               sum(.Object@resources["Area",],
+                   .Object@structures[row.names(.Object@structures[.Object@structures$Area>0,]), "Level"]*
+                 c(.Object@structures[.Object@structures$Area>0, "Area"])))
         }
 
-        .Object@economy=sum(.Object@structures[row.names(struct.refs[struct.refs$Economy>0,]),]*
-                            struct.refs[struct.refs$Economy>0,"Economy"])
+        .Object@economy=sum(.Object@structures[row.names(.Object@structures[.Object@structures$Economy>0,]), "Level"]*
+                            .Object@structures[row.names(.Object@structures[.Object@structures$Economy>0,]), "Economy"])
 
         .Object@construction={
-            cons.d<-if(.Object@home) 40 else 20
-            round(sum(cons.d,sum(
-            .Object@structures[c("Metal.Refineries",
-                row.names(struct.refs[struct.refs$Construction>0,])),]*
-                c(.Object@sfmgca["Metal",],
-                    struct.refs[struct.refs$Construction>0,"Construction"])))*
+            cons.d<-if(isHome(.Object)) 40 else 20
+            cyber.tech <- 1+Data$Current$Technologies["Cybernetics", "Bonus"]
+            round(sum(cons.d,
+                .Object@structures[row.names(.Object@structures[.Object@structures$Construction>0,]), "Level"]*
+                .Object@structures[row.names(.Object@structures[.Object@structures$Construction>0,]), "Construction"])*
                 cyber.tech)
         }
 
-        .Object@production=round(sum(
-            .Object@structures[c("Metal.Refineries",
-                row.names(struct.refs[struct.refs$Production>0,])),]*
-            c(.Object@sfmgca["Metal",],struct.refs[struct.refs$Production>0,"Production"]))*
-            cyber.tech)
+        .Object@production={
+            cyber.tech <- 1+Data$Current$Technologies["Cybernetics", "Bonus"]
+            round(sum(
+                .Object@structures[row.names(.Object@structures[.Object@structures$Production>0,]), "Level"]*
+                .Object@structures[row.names(.Object@structures[.Object@structures$Production>0,]), "Production"])*
+                cyber.tech)
+        }
 
-        .Object@research=round(as.numeric(.Object@structures["Research.Labs",]*8*ai.tech))
+        .Object@research={
+            ai.tech <- 1+Data$Current$Technologies["Artificial.Intelligence", "Bonus"]
+            round(as.numeric(.Object@structures["Research.Labs", "Level"]*8*ai.tech))
+        }
 
         return(.Object)
     }
 )
-new(Class="Base",name="Primus")
+setGeneric("isHome", function(.Object){standardGeneric("isHome")})
+setMethod(
+    f = "isHome",
+    signature = "Base",
+    definition = function(.Object){
+        return(Data$Current$Home == .Object@name)
+    }
+)
+{Primus<-new(Class="Base",name="Primus")}
+Primus
