@@ -81,6 +81,9 @@ Consider Construction commanders for each base and a research commander for each
 [*][b]Level 14:[/b] 3,892 XP - 7,784 cred.
 [*][b]Level 15:[/b] 5,839 XP - 11,678 cred.
 [*][b]Level 16:[/b] 8,758 XP - 17,516 cred.
+[*][b]Level 17:[/b] 13,137 XP - 26,274 cred.
+[*][b]Level 18:[/b] 19,705 XP - 39,410 cred.
+[*][b]Level 19:[/b] 29,558 XP - 59,116 cred.
 [/list]
 
 [center][size=3][b]Using production queues to produce goods for generating extra credits[/b][/size][/center]
