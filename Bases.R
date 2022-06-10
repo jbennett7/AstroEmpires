@@ -15,20 +15,12 @@ setClass(
         structures = "data.frame",
         defenses = "data.frame",
         resources = "matrix",
-        population = "numeric",
-        energy = "numeric",
-        area = "numeric",
-        economy = "numeric",
         construction = "numeric",
         production = "numeric",
         research = "numeric"
     ),
     prototype = prototype(
         resources = matrix(0),
-        population = c(0,0),
-        energy = c(0,0),
-        area = c(0,0),
-        economy = 0,
         construction = 0,
         production = 0,
         research = 0
@@ -90,64 +82,6 @@ setMethod(
             tmp
         }
 
-        .Object@population = {
-            c( sum(c(.Object@structures[.Object@structures$Population<0,"Level"],
-                     .Object@defenses[.Object@defenses$Population<0,"Level"])*
-                   -c(.Object@structures[.Object@structures$Population<0,"Population"],
-                      .Object@defenses[.Object@defenses$Population<0,"Population"])),
-               sum(.Object@structures[.Object@structures$Population>0,"Level"]*
-                   .Object@structures[.Object@structures$Population>0,"Population"]))
-        }
-
-        .Object@energy = {
-            #print(.Object@structures[.Object@structures$Energy>0,"Energy"])
-            energy.tech <- 1+Data$Current$Technologies["Energy","Bonus"]
-            c( sum(c(.Object@structures[.Object@structures$Energy<0,"Level"],
-                     .Object@defenses[.Object@defenses$Energy<0,"Level"])*
-                  -c(.Object@structures[.Object@structures$Energy<0, "Energy"],
-                     .Object@defenses[.Object@defenses$Energy<0, "Energy"])),
-               round(sum(2,
-                   .Object@structures[row.names(.Object@structures[.Object@structures$Energy>0,]),"Level"]*
-                   c(.Object@structures[.Object@structures$Energy>0, "Energy"]))*
-                   energy.tech))
-       }
-
-        .Object@area = {
-            c(
-               sum(c(.Object@structures[.Object@structures$Area<0, "Level"],
-                     .Object@defenses[.Object@defenses$Area<0, "Level"])*
-                  -c(.Object@structures[.Object@structures$Area<0, "Area"],
-                     .Object@defenses[.Object@defenses$Area<0, "Area"])),
-               sum(.Object@resources["Area",],
-                   .Object@structures[row.names(.Object@structures[.Object@structures$Area>0,]), "Level"]*
-                 c(.Object@structures[.Object@structures$Area>0, "Area"])))
-        }
-
-        .Object@economy=sum(.Object@structures[row.names(.Object@structures[.Object@structures$Economy>0,]), "Level"]*
-                            .Object@structures[row.names(.Object@structures[.Object@structures$Economy>0,]), "Economy"])
-
-        .Object@construction={
-            cons.d<-if(isHome(.Object)) 40 else 20
-            cyber.tech <- 1+Data$Current$Technologies["Cybernetics", "Bonus"]
-            round(sum(cons.d,
-                .Object@structures[row.names(.Object@structures[.Object@structures$Construction>0,]), "Level"]*
-                .Object@structures[row.names(.Object@structures[.Object@structures$Construction>0,]), "Construction"])*
-                cyber.tech)
-        }
-
-        .Object@production={
-            cyber.tech <- 1+Data$Current$Technologies["Cybernetics", "Bonus"]
-            round(sum(
-                .Object@structures[row.names(.Object@structures[.Object@structures$Production>0,]), "Level"]*
-                .Object@structures[row.names(.Object@structures[.Object@structures$Production>0,]), "Production"])*
-                cyber.tech)
-        }
-
-        .Object@research={
-            ai.tech <- 1+Data$Current$Technologies["Artificial.Intelligence", "Bonus"]
-            round(as.numeric(.Object@structures["Research.Labs", "Level"]*8*ai.tech))
-        }
-
         return(.Object)
     }
 )
@@ -159,5 +93,102 @@ setMethod(
         return(Data$Current$Home == .Object@name)
     }
 )
+setGeneric("getPopulation", function(.Object){standardGeneric("getPopulation")})
+setMethod(
+    f = "getPopulation",
+    signature = "Base",
+    definition = function(.Object){
+            c( sum(c(.Object@structures[.Object@structures$Population<0,"Level"],
+                     .Object@defenses[.Object@defenses$Population<0,"Level"])*
+                   -c(.Object@structures[.Object@structures$Population<0,"Population"],
+                      .Object@defenses[.Object@defenses$Population<0,"Population"])),
+               sum(.Object@structures[.Object@structures$Population>0,"Level"]*
+                   .Object@structures[.Object@structures$Population>0,"Population"]))
+    }
+)
+setGeneric("getEnergy", function(.Object){standardGeneric("getEnergy")})
+setMethod(
+    f = "getEnergy",
+    signature = "Base",
+    definition = function(.Object){
+            energy.tech <- 1+Data$Current$Technologies["Energy","Bonus"]
+            c( sum(c(.Object@structures[.Object@structures$Energy<0,"Level"],
+                     .Object@defenses[.Object@defenses$Energy<0,"Level"])*
+                  -c(.Object@structures[.Object@structures$Energy<0, "Energy"],
+                     .Object@defenses[.Object@defenses$Energy<0, "Energy"])),
+               round(sum(2,
+                   .Object@structures[row.names(.Object@structures[.Object@structures$Energy>0,]), "Level"]*
+                   c(.Object@structures[.Object@structures$Energy>0, "Energy"]))*
+                   energy.tech))
+    }
+)
+setGeneric("getArea", function(.Object){standardGeneric("getArea")})
+setMethod(
+    f = "getArea",
+    signature = "Base",
+    definition = function(.Object){
+        c(
+           sum(c(.Object@structures[.Object@structures$Area<0, "Level"],
+                 .Object@defenses[.Object@defenses$Area<0, "Level"])*
+              -c(.Object@structures[.Object@structures$Area<0, "Area"],
+                 .Object@defenses[.Object@defenses$Area<0, "Area"])),
+           sum(.Object@resources["Area",],
+               .Object@structures[row.names(.Object@structures[.Object@structures$Area>0,]), "Level"]*
+             c(.Object@structures[.Object@structures$Area>0, "Area"])))
+    }
+)
+setGeneric("getEconomy", function(.Object){standardGeneric("getEconomy")})
+setMethod(
+    f = "getEconomy",
+    signature = "Base",
+    definition = function(.Object){
+        sum(.Object@structures[row.names(.Object@structures[.Object@structures$Economy>0,]), "Level"]*
+            .Object@structures[row.names(.Object@structures[.Object@structures$Economy>0,]), "Economy"])
+    }
+)
+
+setGeneric("getConstruction", function(.Object){standardGeneric("getConstruction")})
+setMethod(
+    f = "getConstruction",
+    signature = "Base",
+    definition = function(.Object){
+        cons.d<-if(isHome(.Object)) 40 else 20
+        cyber.tech <- 1+Data$Current$Technologies["Cybernetics", "Bonus"]
+        round(sum(cons.d,
+            .Object@structures[row.names(.Object@structures[.Object@structures$Construction>0,]), "Level"]*
+            .Object@structures[row.names(.Object@structures[.Object@structures$Construction>0,]), "Construction"])*
+            cyber.tech)
+    }
+)
+
+setGeneric("getProduction", function(.Object){standardGeneric("getProduction")})
+setMethod(
+    f = "getProduction",
+    signature = "Base",
+    definition = function(.Object){
+        cyber.tech <- 1+Data$Current$Technologies["Cybernetics", "Bonus"]
+        round(sum(
+            .Object@structures[row.names(.Object@structures[.Object@structures$Production>0,]), "Level"]*
+            .Object@structures[row.names(.Object@structures[.Object@structures$Production>0,]), "Production"])*
+            cyber.tech)
+    }
+)
+
+setGeneric("getResearch", function(.Object){standardGeneric("getResearch")})
+setMethod(
+    f = "getResearch",
+    signature = "Base",
+    definition = function(.Object){
+        ai.tech <- 1+Data$Current$Technologies["Artificial.Intelligence", "Bonus"]
+        round(as.numeric(.Object@structures["Research.Labs", "Level"]*8*ai.tech))
+    }
+)
+
 {Primus<-new(Class="Base",name="Primus")}
-Primus
+getPopulation(Primus)
+getEnergy(Primus)
+getArea(Primus)
+getEconomy(Primus)
+getConstruction(Primus)
+getProduction(Primus)
+getResearch(Primus)
