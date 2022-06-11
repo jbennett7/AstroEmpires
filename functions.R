@@ -1,4 +1,5 @@
-load(".datafile.Rdata")
+source("config")
+load(data.file)
 
 Trade <- new.env()
 Trade$income <- function(low.base,distance,players) {

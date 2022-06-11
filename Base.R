@@ -1,4 +1,5 @@
-load(".datafile.Rdata")
+source("config")
+load(data.file)
 initial.energy <- 2
 struct.refs <- Data$Tables$Structures
 defense.refs <- Data$Tables$Defenses
@@ -12,18 +13,9 @@ setClass(
     representation = representation(
         name = "character",
         home = "logical",
-        structures = "data.frame",
-        defenses = "data.frame",
         resources = "matrix",
-        construction = "numeric",
-        production = "numeric",
-        research = "numeric"
-    ),
-    prototype = prototype(
-        resources = matrix(0),
-        construction = 0,
-        production = 0,
-        research = 0
+        structures = "data.frame",
+        defenses = "data.frame"
     )
 )
 setMethod(
@@ -31,6 +23,7 @@ setMethod(
     signature = "Base",
     definition = function(.Object, name){
         .Object@name = name
+        .Object@home = if(Data$Current$Home == name) TRUE else FALSE
 
         .Object@resources = {
             base.info <- Data$Current$Bases[name,]
@@ -186,9 +179,9 @@ setMethod(
 
 {Primus<-new(Class="Base",name="Primus")}
 getPopulation(Primus)
-getEnergy(Primus)
-getArea(Primus)
-getEconomy(Primus)
-getConstruction(Primus)
-getProduction(Primus)
-getResearch(Primus)
+#getEnergy(Primus)
+#getArea(Primus)
+#getEconomy(Primus)
+#getConstruction(Primus)
+#getProduction(Primus)
+#getResearch(Primus)
