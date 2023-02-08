@@ -2,11 +2,17 @@ setClass(
     Class = "Base",
     slots = c(
         name = "character",
-        home = "logical",
         terrain = "character",
         type = "character",
         position = "numeric",
         resources = "matrix",
-        structures = "matrix"
+        structures = "matrix",
+        population = "numeric",
+        energy = "numeric",
+        area = "numeric",
+        economy = "numeric",
+        construction = "numeric",
+        production = "numeric",
+        research = "numeric"
     )
 )
