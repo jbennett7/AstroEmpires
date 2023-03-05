@@ -8,6 +8,7 @@
 #'
 # The input from the technologies page.
 read.techlevels <- function(input) {
+    input = input[input!=""]
     rownames = gsub(" |-",".",input[seq(3,length(input),3)])
     dat = strsplit(gsub("^\t","",input[seq(5,length(input),3)]),split="\t")
     ret = do.call(rbind,dat)
