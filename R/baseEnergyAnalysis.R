@@ -18,8 +18,10 @@ setMethod("baseEnergyAnalysis",
             Next.Level.Cost,
             eval(as.symbol(plant))[lvl,"Credits"])
     }
-    energy <- data.frame(Energy,Next.Level.Cost)
+    Energy.per.Cost <- Energy/Next.Level.Cost
+    energy <- data.frame(Energy,Next.Level.Cost,Energy.per.Cost)
     rownames(energy) <- plants
-    return(energy)
+    return(energy[
+        order(energy$Energy.per.Cost,decreasing=TRUE),])
 })
 
