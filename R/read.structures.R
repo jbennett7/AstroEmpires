@@ -7,7 +7,7 @@
 #' bases <- read.structures(input=stdin())
 #'
 read.structures <- function(input) {
-    input = input[input!=""]
+    input <- input[!input %in% c("","\t")]
     data(Structures)
     data(Defenses)
     structNames = rownames(Structures)
@@ -16,7 +16,7 @@ read.structures <- function(input) {
     ret = cbind(do.call(rbind,dat))
     baseNames = ret[,1]
     ret = cbind(ret[,2:24],ret[,26:35])
-    ret = matrix(as.numeric(ret),ncol=33)
+    ret = data.frame(as.numeric(ret),ncol=33)
     rownames(ret) = baseNames
     colnames(ret) = structNames
     ret[is.na(ret)] = 0
