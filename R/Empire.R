@@ -1,7 +1,6 @@
 setClass(
     "Empire",
     slots = c(
-        server = "character",
         homeBase = "character",
         structures = "data.frame",
         techLevels = "data.frame",
