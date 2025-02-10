@@ -3,6 +3,7 @@
 \docType{data}
 \title{
 %%   ~~ data name/kind ... ~~
+  Laser
 }
 \description{
 %%  ~~ A concise (1-5 lines) description of the dataset. ~~
